@@ -4,6 +4,7 @@ const cors = require('cors');
 require('dotenv').config({ path: './src/v1/config/.env' });
 const colors = require('colors');
 const errorHandler = require('./src/v1/middleware/errorHandler');
+const xssProtection = require('x-xss-protection');
 
 // api import
 const v1Api = require('./src/v1/routes');
@@ -16,16 +17,12 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cors());
+app.use(xssProtection());
 
 // helmet config
 if (process.env.NODE_ENV === 'production') {
 	app.use(helmet());
 }
-
-app.use(function (req, res, next) {
-	res.header('X-XSS-Protection', 0);
-	next();
-});
 
 // mount APIs
 app.use('/api/v1', v1Api);
