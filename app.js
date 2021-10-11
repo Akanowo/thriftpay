@@ -1,5 +1,8 @@
 const express = require('express');
 const helmet = require('helmet');
+const cors = require('cors');
+require('dotenv').config();
+const colors = require('colors');
 
 const PORT = process.env.PORT || 3000;
 
@@ -16,5 +19,5 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 app.listen(PORT, () => {
-	console.log(`App started on port ${PORT}`);
+	console.log(`App started on port ${PORT}`.yellow.bold);
 });
