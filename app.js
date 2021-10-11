@@ -1,7 +1,7 @@
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
-require('dotenv').config();
+require('dotenv').config({ path: './src/v1/config/.env' });
 const colors = require('colors');
 
 const PORT = process.env.PORT || 3000;
