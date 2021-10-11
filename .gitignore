@@ -2,3 +2,6 @@ node_modules
 
 #config files
 src/v1/config/.env
+
+#REST CLIENT
+requests.rest
