@@ -28,12 +28,15 @@ const userSchema = new Schema({
 		required: [1, 'phone number is required'],
 		unique: true,
 	},
-	dob: String,
+	dob: {type: String},
 	status: {
 		type: String,
 		enum: ['active', 'inactive'],
 		default: 'inactive',
 	},
+	type: {
+		enum: ['agent', 'customer']
+	}
 });
 
 const User = model('User', userSchema);
