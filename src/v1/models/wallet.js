@@ -17,7 +17,7 @@ const walletSchema = new Schema({
 	},
 	balance: {
 		type: Number,
-		default: 0.0,
+		default: 30000.0,
 	},
 	createdAt: {
 		type: Date,

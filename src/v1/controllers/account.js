@@ -1,9 +1,11 @@
 const controllers = () => {
-	const createVAcc = (req, res, next) => {
+	const topUp = (req, res, next) => {
 		const {} = req.body;
 	};
 
-	return {};
+	return {
+		topUp,
+	};
 };
 
 module.exports = controllers;

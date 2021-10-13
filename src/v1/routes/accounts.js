@@ -3,9 +3,9 @@ const controller = require('../controllers/account');
 
 const routes = () => {
 	// destructure controllers
-	const { createVAcc } = controller;
+	const { topUp } = controller;
 
-	router.route('/').get(getProfile);
+	router.route('/topUp').post(topUp);
 
 	return router;
 };

@@ -55,23 +55,30 @@ const controllers = () => {
 		let error;
 		const { phone, pin } = req.body;
 		if (!phone || !pin) {
-			const error = new ErrorResponse('missing phone or password', 400);
+			const error = new ErrorResponse('missing phone or pin', 400);
 			return next(error);
 		}
 
-		const user = await User.findOne({ phone, status: 'active' });
+		const user = await User.findOne({
+			$or: [{ 'agent.phone': phone }, { 'customer.phone': phone }],
+			status: 'active',
+		});
 
 		console.log(user);
 
 		if (!user) {
-			error = new ErrorResponse('invalid phone number or password', 400);
+			error = new ErrorResponse('invalid phone number or pin', 400);
 			return next(error);
 		}
 
-		if (!(await bcrypt.compare(pin, user.pin))) {
-			error = new ErrorResponse('invalid phone number or password', 400);
+		if (!(await bcrypt.compare(pin, user.agent.pin || user.customer.pin))) {
+			error = new ErrorResponse('invalid phone number or pin', 400);
 			return next(error);
 		}
+
+		// get user's account and wallet details
+		const account_details = await VAccount.findOne({ user: user._id });
+		const wallet_details = await Wallet.findOne({ user: user._id });
 
 		const access_token = generateJwt({ user_id: user._id });
 
@@ -82,6 +89,8 @@ const controllers = () => {
 				message: 'login successful',
 				access_token,
 				user,
+				account_details,
+				wallet_details,
 			},
 		});
 	});
