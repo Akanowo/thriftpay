@@ -5,9 +5,13 @@ require('dotenv').config({ path: './src/v1/config/.env' });
 const colors = require('colors');
 const errorHandler = require('./src/v1/middleware/errorHandler');
 const xssProtection = require('x-xss-protection');
+const dbConnect = require('./src/v1/config/db');
+
+dbConnect();
 
 // api import
 const v1Api = require('./src/v1/routes');
+const cookieParser = require('cookie-parser');
 
 const PORT = process.env.PORT || 3000;
 
@@ -18,6 +22,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cors());
 app.use(xssProtection());
+app.use(cookieParser());
 
 // helmet config
 if (process.env.NODE_ENV === 'production') {

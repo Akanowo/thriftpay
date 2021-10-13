@@ -1,4 +1,10 @@
 const router = require('express').Router();
+const authenticate = require('../middleware/authenticate');
+const authRouter = require('./auth');
+const profileRouter = require('./profile');
+
+router.use('/auth', authRouter());
+router.use('/profile', authenticate, profileRouter());
 
 router.use('/', (req, res, next) => {
 	return res.status(200).json({
