@@ -1,42 +1,69 @@
 const mongoose = require('mongoose');
-const { Schema, model } = mongoose;
+const { Schema, model, Types } = mongoose;
 
-const userSchema = new Schema({
-	email: {
-		type: String,
-		match: [
-			/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
-			'Please enter a valid email address',
-		],
-	},
-	password: {
-		type: String,
-		required: [1, 'passowrd is required'],
-	},
+const agentSchema = new Schema({
 	firstname: {
 		type: String,
-		required: [1, 'first name is required'],
-		match: [/^[a-z ,.'-]+$/i, 'format not valid'],
+		required: true,
 	},
 	lastname: {
 		type: String,
-		required: [1, 'last name is required'],
-		match: [/^[a-z ,.'-]+$/i, 'format not valid'],
+		required: true,
 	},
 	phone: {
 		type: String,
-		required: [1, 'phone number is required'],
-		unique: true,
+		required: true,
 	},
-	dob: {type: String},
+	pin: {
+		type: String,
+		required: true,
+	},
+	code: {
+		type: String,
+		required: true,
+	},
+});
+
+const customerSchema = new Schema({
+	firstname: {
+		type: String,
+		required: true,
+	},
+	lastname: {
+		type: String,
+		required: true,
+	},
+	phone: {
+		type: String,
+		required: true,
+	},
+	pin: {
+		type: String,
+		required: true,
+		max: 6,
+	},
+	dob: {
+		type: String,
+		required: true,
+	},
+	agent_code: {
+		type: String,
+		required: true,
+	},
+});
+
+const userSchema = new Schema({
 	status: {
 		type: String,
 		enum: ['active', 'inactive'],
 		default: 'inactive',
 	},
 	type: {
-		enum: ['agent', 'customer']
-	}
+		type: String,
+		enum: ['agent', 'customer'],
+	},
+	agent: agentSchema,
+	customer: customerSchema,
 });
 
 const User = model('User', userSchema);

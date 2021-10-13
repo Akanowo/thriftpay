@@ -5,12 +5,56 @@ const { sendOtp, validateOTP } = require('../utils/otp');
 const bcrypt = require('bcrypt');
 const Otp = require('../models/otp');
 const generateJwt = require('../utils/generateJwt');
+const shortid = require('short-id');
+const uuid = require('uuid');
+const axios = require('axios').default;
+const VAccount = require('../models/vaccount');
+const Wallet = require('../models/wallet');
+
+const createVAcc = async (user_data) => {
+	let response;
+	const endpoint = `/woven/vnubans/create_customer`;
+	const config = {
+		headers: {
+			'sandbox-key': process.env.SANDBOX_KEY,
+			'api-secret': process.env.API_SECRET,
+		},
+	};
+	const data = {
+		customer_reference: uuid.v4(),
+		name: 'Thriftpay',
+		email: 'ukoakanowo98@gmail.com',
+		mobile_number: user_data.phone,
+		use_frequency: '5',
+		min_amount: 100,
+		max_amount: 300000,
+		callback_url: 'https://webhook.site',
+		meta_data: {
+			somedatakey: 'Thriftpay financial services',
+		},
+	};
+
+	try {
+		console.log(`${process.env.BASE_URL}${endpoint}`);
+		response = await axios.post(
+			`${process.env.BASE_URL}${endpoint}`,
+			data,
+			config
+		);
+	} catch (error) {
+		return { status: false, error };
+	}
+
+	if (response.data.status === 'success') {
+		return response.data.data;
+	}
+};
 
 const controllers = () => {
 	const handleLogin = asyncHandler(async (req, res, next) => {
 		let error;
-		const { phone, password } = req.body;
-		if (!phone || !password) {
+		const { phone, pin } = req.body;
+		if (!phone || !pin) {
 			const error = new ErrorResponse('missing phone or password', 400);
 			return next(error);
 		}
@@ -24,14 +68,14 @@ const controllers = () => {
 			return next(error);
 		}
 
-		if (!(await bcrypt.compare(password, user.password))) {
+		if (!(await bcrypt.compare(pin, user.pin))) {
 			error = new ErrorResponse('invalid phone number or password', 400);
 			return next(error);
 		}
 
 		const access_token = generateJwt({ user_id: user._id });
 
-		delete user._doc.password;
+		delete user._doc.pin;
 		return res.status(200).json({
 			status: true,
 			data: {
@@ -43,19 +87,107 @@ const controllers = () => {
 	});
 
 	const handleRegistration = asyncHandler(async (req, res, next) => {
-		let { phone, password } = req.body;
+		let { type, phone } = req.body;
+		req.body.phone = '+234' + phone.slice(1, phone.length);
+		console.log(req.body.phone);
 
-		if (password) {
-			req.body.password = await bcrypt.hash(password, 10);
+		let error;
+
+		req.body.pin = await bcrypt.hash(req.body.pin, 10);
+
+		let user_data;
+
+		let userExists;
+
+		if (type === 'agent') {
+			userExists = await User.findOne({ 'agent.phone': req.body.phone });
+			console.log(userExists);
+
+			if (userExists) {
+				error = new ErrorResponse(`user exists with that phone number`, 400);
+				return next(error);
+			}
+
+			user_data = {
+				type,
+				agent: {
+					...req.body,
+					code: shortid.generate(),
+				},
+			};
+
+			delete user_data.agent.type;
+		} else {
+			userExists = await User.findOne({ 'agent.phone': req.body.phone });
+
+			if (userExists) {
+				error = new ErrorResponse(`user exists with that phone number`, 400);
+				return next(error);
+			}
+			user_data = {
+				type,
+				customer: {
+					...req.body,
+				},
+			};
 		}
 
-		const user = await User.create(req.body);
+		const user = await User.create(user_data);
 
 		console.log(user);
 
 		if (user) {
 			// verify phone number
-			return sendOtp(phone, 'account activation', user._id, res, next);
+			// return sendOtp(phone, 'account activation', user._id, res, next);
+
+			// create account with woven api
+			const newVAcc = await createVAcc(req.body);
+			console.log('new virtual account: ', newVAcc);
+
+			if (!newVAcc.status) {
+				error = new ErrorResponse(
+					newVAcc.error.response.data.message,
+					newVAcc.error.response.status
+				);
+				return next(error);
+			}
+
+			// edit api response
+			const phoneSplit = req.body.phone.replace('+234', '');
+			newVAcc.custom_acc_number = phoneSplit;
+			newVAcc.account_name = `${req.body.lastname} ${req.body.firstname}`;
+			newVAcc.account_email = 'ukoakanowo98@gmail.com';
+			newVAcc.account_mobile_number = `${req.body.phone}`;
+			newVAcc.account_reference = uuid.v4();
+			newVAcc.user = user._id;
+
+			console.log('Edited virtual account: ', newVAcc);
+
+			// store virtual account
+			const userDbVAcc = await VAccount.create(newVAcc);
+
+			if (userDbVAcc) {
+				const wallet_data = {
+					name: 'Default',
+					account: userDbVAcc._id,
+					user: user._id,
+				};
+
+				// create wallet
+				const userWallet = await Wallet.create(wallet_data);
+
+				const access_token = generateJwt({ user_id: user._id });
+				delete user._doc.pin;
+				return res.status(200).json({
+					status: true,
+					data: {
+						access_token,
+						user,
+						account_details: userDbVAcc,
+						wallet_details: userWallet,
+					},
+				});
+			}
 		}
 	});
 
@@ -96,6 +228,7 @@ const controllers = () => {
 					}
 				}
 			}
+
 			const otpUpdate = await Otp.findByIdAndUpdate(validOtp._id, {
 				$set: { status: 'expired' },
 			});

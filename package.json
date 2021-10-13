@@ -21,6 +21,8 @@
     "jsonwebtoken": "^8.5.1",
     "moment": "^2.29.1",
     "mongoose": "^6.0.10",
+    "short-id": "0.1.0-1",
+    "uuid": "^8.3.2",
     "x-xss-protection": "^2.0.0"
   },
   "devDependencies": {
