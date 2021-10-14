@@ -87,13 +87,8 @@ const controllers = () => {
 
 		const access_token = generateJwt({ user_id: user._id });
 
-		// delete user._doc.pin;
-
-		if (user.type === 'agent') {
-			delete user._doc.agent.pin;
-		} else {
-			delete user._doc.customer.pin;
-		}
+		delete user._doc?.agent?.pin;
+		delete user._doc?.customer.pin;
 
 		return res.status(200).json({
 			status: true,
