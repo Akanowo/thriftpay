@@ -109,10 +109,17 @@ const controllers = () => {
 
 	const handleRegistration = asyncHandler(async (req, res, next) => {
 		let { type, phone } = req.body;
+		let error;
+
+		console.log(req.body);
+
+		if (!type || !phone) {
+			error = new ErrorResponse(`Missing request body`, 400);
+			return next(error);
+		}
+
 		req.body.phone = '+234' + phone.slice(1, phone.length);
 		console.log(req.body.phone);
-
-		let error;
 
 		req.body.pin = await bcrypt.hash(req.body.pin, 10);
 
