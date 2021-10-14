@@ -59,8 +59,13 @@ const controllers = () => {
 			return next(error);
 		}
 
+		req.body.phone = '+234' + phone.slice(1, phone.length);
+
 		const user = await User.findOne({
-			$or: [{ 'agent.phone': phone }, { 'customer.phone': phone }],
+			$or: [
+				{ 'agent.phone': req.body.phone },
+				{ 'customer.phone': req.body.phone },
+			],
 			status: 'active',
 		});
 
@@ -83,7 +88,7 @@ const controllers = () => {
 		const access_token = generateJwt({ user_id: user._id });
 
 		// delete user._doc.pin;
-		
+
 		if (user.type === 'agent') {
 			delete user._doc.agent.pin;
 		} else {
